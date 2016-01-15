@@ -40,6 +40,8 @@ public class Utility {
                 && prefs.contains(context.getString(R.string.pref_location_longitude));
     }
 
+
+
     public static float getLocationLatitude(Context context) {
         SharedPreferences prefs
                 = PreferenceManager.getDefaultSharedPreferences(context);

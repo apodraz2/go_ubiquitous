@@ -36,6 +36,13 @@ import com.example.android.sunshine.app.R;
 import com.example.android.sunshine.app.Utility;
 import com.example.android.sunshine.app.data.WeatherContract;
 import com.example.android.sunshine.app.muzei.WeatherMuzeiSource;
+import com.google.android.gms.common.ConnectionResult;
+import com.google.android.gms.common.api.GoogleApiClient;
+import com.google.android.gms.common.api.ResultCallback;
+import com.google.android.gms.wearable.DataApi;
+import com.google.android.gms.wearable.PutDataMapRequest;
+import com.google.android.gms.wearable.PutDataRequest;
+import com.google.android.gms.wearable.Wearable;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -63,6 +70,7 @@ public class SunshineSyncAdapter extends AbstractThreadedSyncAdapter {
     private static final long DAY_IN_MILLIS = 1000 * 60 * 60 * 24;
     private static final int WEATHER_NOTIFICATION_ID = 3004;
 
+    private GoogleApiClient mGoogleApiClient = null;
 
     private static final String[] NOTIFY_WEATHER_PROJECTION = new String[] {
             WeatherContract.WeatherEntry.COLUMN_WEATHER_ID,
@@ -190,6 +198,7 @@ public class SunshineSyncAdapter extends AbstractThreadedSyncAdapter {
             e.printStackTrace();
             setLocationStatus(getContext(), LOCATION_STATUS_SERVER_INVALID);
         } finally {
+
             if (urlConnection != null) {
                 urlConnection.disconnect();
             }
@@ -281,7 +290,7 @@ public class SunshineSyncAdapter extends AbstractThreadedSyncAdapter {
             long locationId = addLocation(locationSetting, cityName, cityLatitude, cityLongitude);
 
             // Insert the new weather information into the database
-            Vector<ContentValues> cVVector = new Vector<ContentValues>(weatherArray.length());
+            final Vector<ContentValues> cVVector = new Vector<ContentValues>(weatherArray.length());
 
             // OWM returns daily forecasts based upon the local time of the city that is being
             // asked for, which means that we need to know the GMT offset to translate this data
@@ -308,11 +317,11 @@ public class SunshineSyncAdapter extends AbstractThreadedSyncAdapter {
                 double windSpeed;
                 double windDirection;
 
-                double high;
-                double low;
+                final double high;
+                final double low;
 
                 String description;
-                int weatherId;
+                final int weatherId;
 
                 // Get the JSON object representing the day
                 JSONObject dayForecast = weatherArray.getJSONObject(i);
@@ -352,6 +361,31 @@ public class SunshineSyncAdapter extends AbstractThreadedSyncAdapter {
                 weatherValues.put(WeatherContract.WeatherEntry.COLUMN_WEATHER_ID, weatherId);
 
                 cVVector.add(weatherValues);
+
+                //Android wear data API
+                //This may not be the best place for this code
+                mGoogleApiClient = new GoogleApiClient.Builder(getContext())
+                        .addConnectionCallbacks(new GoogleApiClient.ConnectionCallbacks() {
+                            @Override
+                            public void onConnected(Bundle bundle) {
+                                sendWeatherInfo(high, low, weatherId);
+                            }
+
+                            @Override
+                            public void onConnectionSuspended(int i) {
+
+                            }
+                        })
+                        .addOnConnectionFailedListener(new GoogleApiClient.OnConnectionFailedListener() {
+                            @Override
+                            public void onConnectionFailed(ConnectionResult connectionResult) {
+
+                            }
+                        })
+                        .addApi(Wearable.API)
+                        .build();
+
+                mGoogleApiClient.connect();
             }
 
             int inserted = 0;
@@ -369,6 +403,9 @@ public class SunshineSyncAdapter extends AbstractThreadedSyncAdapter {
                 updateWidgets();
                 updateMuzei();
                 notifyWeather();
+
+
+
             }
             Log.d(LOG_TAG, "Sync Complete. " + cVVector.size() + " Inserted");
             setLocationStatus(getContext(), LOCATION_STATUS_OK);
@@ -380,12 +417,34 @@ public class SunshineSyncAdapter extends AbstractThreadedSyncAdapter {
         }
     }
 
+    private void sendWeatherInfo(double high, double low, int weatherId) {
+        PutDataMapRequest putDataMapRequest = PutDataMapRequest.create("/sunshine");
+        putDataMapRequest.getDataMap().putDouble("temp-high", high);
+        putDataMapRequest.getDataMap().putDouble("temp-low", low);
+        putDataMapRequest.getDataMap().putInt("weather-id", weatherId);
+
+        PutDataRequest request = putDataMapRequest.asPutDataRequest();
+
+        Wearable.DataApi.putDataItem(mGoogleApiClient, request)
+                .setResultCallback(new ResultCallback<DataApi.DataItemResult>() {
+                    @Override
+                    public void onResult(DataApi.DataItemResult dataItemResult) {
+                        if(!dataItemResult.getStatus().isSuccess()) {
+                            Log.e(LOG_TAG, "Message was not successfully received by wearable.");
+                        } else {
+                            Log.d(LOG_TAG, "Message was successfully received by wearable.");
+                        }
+                    }
+                });
+    }
+
     private void updateWidgets() {
         Context context = getContext();
         // Setting the package ensures that only components in our app will receive the broadcast
         Intent dataUpdatedIntent = new Intent(ACTION_DATA_UPDATED)
                 .setPackage(context.getPackageName());
         context.sendBroadcast(dataUpdatedIntent);
+
     }
 
     private void updateMuzei() {
