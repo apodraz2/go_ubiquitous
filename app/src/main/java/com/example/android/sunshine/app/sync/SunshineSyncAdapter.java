@@ -110,6 +110,32 @@ public class SunshineSyncAdapter extends AbstractThreadedSyncAdapter {
         String locationLatitude = String.valueOf(Utility.getLocationLatitude(context));
         String locationLongitude = String.valueOf(Utility.getLocationLongitude(context));
 
+        //Android wear data API
+        //This may not be the best place for this code
+        mGoogleApiClient = new GoogleApiClient.Builder(getContext())
+                .addConnectionCallbacks(new GoogleApiClient.ConnectionCallbacks() {
+                    @Override
+                    public void onConnected(Bundle bundle) {
+                        Log.d(LOG_TAG, "connected to wearable");
+
+                    }
+
+                    @Override
+                    public void onConnectionSuspended(int i) {
+                        Log.d(LOG_TAG, "connection to wearable broken");
+                    }
+                })
+                .addOnConnectionFailedListener(new GoogleApiClient.OnConnectionFailedListener() {
+                    @Override
+                    public void onConnectionFailed(ConnectionResult connectionResult) {
+                        Log.e(LOG_TAG, "connection to wearable failed");
+                    }
+                })
+                .addApi(Wearable.API)
+                .build();
+
+        mGoogleApiClient.connect();
+
         // These two need to be declared outside the try/catch
         // so that they can be closed in the finally block.
         HttpURLConnection urlConnection = null;
@@ -469,31 +495,10 @@ public class SunshineSyncAdapter extends AbstractThreadedSyncAdapter {
                     int artResourceId = Utility.getArtResourceForWeatherCondition(weatherId);
                     String artUrl = Utility.getArtUrlForWeatherCondition(context, weatherId);
 
-                    //Android wear data API
-                    //This may not be the best place for this code
-                    mGoogleApiClient = new GoogleApiClient.Builder(getContext())
-                            .addConnectionCallbacks(new GoogleApiClient.ConnectionCallbacks() {
-                                @Override
-                                public void onConnected(Bundle bundle) {
-                                    Log.d(LOG_TAG, "connected to wearable");
-                                    sendWeatherInfo(high, low, weatherId);
-                                }
+                    //Send weather data to wearable
+                    sendWeatherInfo(high, low, weatherId);
 
-                                @Override
-                                public void onConnectionSuspended(int i) {
-                                    Log.d(LOG_TAG, "connection to wearable broken");
-                                }
-                            })
-                            .addOnConnectionFailedListener(new GoogleApiClient.OnConnectionFailedListener() {
-                                @Override
-                                public void onConnectionFailed(ConnectionResult connectionResult) {
-                                    Log.e(LOG_TAG, "connection to wearable failed");
-                                }
-                            })
-                            .addApi(Wearable.API)
-                            .build();
 
-                    mGoogleApiClient.connect();
 
                     // On Honeycomb and higher devices, we can retrieve the size of the large icon
                     // Prior to that, we use a fixed size

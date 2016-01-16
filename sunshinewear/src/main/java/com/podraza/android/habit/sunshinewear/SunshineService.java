@@ -3,6 +3,7 @@ package com.podraza.android.habit.sunshinewear;
 import android.app.Service;
 import android.content.Intent;
 import android.os.IBinder;
+import android.util.Log;
 
 import com.google.android.gms.wearable.DataEvent;
 import com.google.android.gms.wearable.DataEventBuffer;
@@ -11,7 +12,14 @@ import com.google.android.gms.wearable.DataMapItem;
 import com.google.android.gms.wearable.WearableListenerService;
 
 public class SunshineService extends WearableListenerService {
+    private final String LOG_TAG = getClass().getSimpleName();
+
+    private double high;
+    private double low;
+    private int weatherId;
+
     public SunshineService() {
+        Log.d(LOG_TAG, "created service");
     }
 
     @Override
@@ -23,7 +31,12 @@ public class SunshineService extends WearableListenerService {
 
                 String path = event.getDataItem().getUri().getPath();
 
-                if(path == "/sunshine") {
+                if("/sunshine".equals(path)) {
+                    high = map.getDouble("temp-high");
+                    low = map.getDouble("temp-low");
+                    weatherId = map.getInt("weather-id");
+
+                    Log.d(LOG_TAG, high + "-" + low + "-" + weatherId);
 
                 }
 
