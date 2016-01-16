@@ -362,30 +362,7 @@ public class SunshineSyncAdapter extends AbstractThreadedSyncAdapter {
 
                 cVVector.add(weatherValues);
 
-                //Android wear data API
-                //This may not be the best place for this code
-                mGoogleApiClient = new GoogleApiClient.Builder(getContext())
-                        .addConnectionCallbacks(new GoogleApiClient.ConnectionCallbacks() {
-                            @Override
-                            public void onConnected(Bundle bundle) {
-                                sendWeatherInfo(high, low, weatherId);
-                            }
 
-                            @Override
-                            public void onConnectionSuspended(int i) {
-
-                            }
-                        })
-                        .addOnConnectionFailedListener(new GoogleApiClient.OnConnectionFailedListener() {
-                            @Override
-                            public void onConnectionFailed(ConnectionResult connectionResult) {
-
-                            }
-                        })
-                        .addApi(Wearable.API)
-                        .build();
-
-                mGoogleApiClient.connect();
             }
 
             int inserted = 0;
@@ -479,16 +456,44 @@ public class SunshineSyncAdapter extends AbstractThreadedSyncAdapter {
                 // we'll query our contentProvider, as always
                 Cursor cursor = context.getContentResolver().query(weatherUri, NOTIFY_WEATHER_PROJECTION, null, null, null);
 
+
+
                 if (cursor.moveToFirst()) {
-                    int weatherId = cursor.getInt(INDEX_WEATHER_ID);
-                    double high = cursor.getDouble(INDEX_MAX_TEMP);
-                    double low = cursor.getDouble(INDEX_MIN_TEMP);
+                    final int weatherId = cursor.getInt(INDEX_WEATHER_ID);
+                    final double high = cursor.getDouble(INDEX_MAX_TEMP);
+                    final double low = cursor.getDouble(INDEX_MIN_TEMP);
                     String desc = cursor.getString(INDEX_SHORT_DESC);
 
                     int iconId = Utility.getIconResourceForWeatherCondition(weatherId);
                     Resources resources = context.getResources();
                     int artResourceId = Utility.getArtResourceForWeatherCondition(weatherId);
                     String artUrl = Utility.getArtUrlForWeatherCondition(context, weatherId);
+
+                    //Android wear data API
+                    //This may not be the best place for this code
+                    mGoogleApiClient = new GoogleApiClient.Builder(getContext())
+                            .addConnectionCallbacks(new GoogleApiClient.ConnectionCallbacks() {
+                                @Override
+                                public void onConnected(Bundle bundle) {
+                                    Log.d(LOG_TAG, "connected to wearable");
+                                    sendWeatherInfo(high, low, weatherId);
+                                }
+
+                                @Override
+                                public void onConnectionSuspended(int i) {
+                                    Log.d(LOG_TAG, "connection to wearable broken");
+                                }
+                            })
+                            .addOnConnectionFailedListener(new GoogleApiClient.OnConnectionFailedListener() {
+                                @Override
+                                public void onConnectionFailed(ConnectionResult connectionResult) {
+                                    Log.e(LOG_TAG, "connection to wearable failed");
+                                }
+                            })
+                            .addApi(Wearable.API)
+                            .build();
+
+                    mGoogleApiClient.connect();
 
                     // On Honeycomb and higher devices, we can retrieve the size of the large icon
                     // Prior to that, we use a fixed size
