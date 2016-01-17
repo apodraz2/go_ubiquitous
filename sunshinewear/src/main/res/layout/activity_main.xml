@@ -19,22 +19,25 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:id="@+id/high_view"
-        android:text="20"
-        android:layout_marginTop="120dp"
-        android:layout_marginLeft="70dp"
+
+        android:layout_marginTop="@dimen/margin_top"
+        android:layout_marginLeft="@dimen/high_margin_left"
         />
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:id="@+id/low_view"
-        android:text="0"
-        android:layout_marginTop="120dp"
-        android:layout_marginLeft="110dp"/>
+
+        android:layout_marginTop="@dimen/margin_top"
+        android:layout_marginLeft="@dimen/low_margin_left"/>
 
     <ImageView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:id="@+id/weather_view"
-        android:background="@drawable/art_clear"/>
+        android:layout_gravity="center_horizontal"
+
+        android:layout_marginTop="@dimen/imageview_margin_top"
+        />
 
 </android.support.wearable.view.BoxInsetLayout>
