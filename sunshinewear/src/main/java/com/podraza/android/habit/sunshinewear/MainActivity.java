@@ -1,9 +1,16 @@
 package com.podraza.android.habit.sunshinewear;
 
+import android.content.BroadcastReceiver;
+import android.content.Context;
+import android.content.Intent;
+import android.content.IntentFilter;
 import android.os.Bundle;
+import android.support.v4.content.LocalBroadcastManager;
 import android.support.wearable.activity.WearableActivity;
 import android.support.wearable.view.BoxInsetLayout;
+import android.util.Log;
 import android.view.View;
+import android.widget.ImageView;
 import android.widget.TextView;
 
 import java.text.SimpleDateFormat;
@@ -11,13 +18,22 @@ import java.util.Date;
 import java.util.Locale;
 
 public class MainActivity extends WearableActivity {
+    private final String LOG_TAG = getClass().getSimpleName();
+
+    private BroadcastReceiver mMessageReceiver;
+    private double mHigh;
+    private double mLow;
+    private int mWeatherId;
+
+    private TextView mHighView;
+    private TextView mLowView;
+    private ImageView mImageView;
 
     private static final SimpleDateFormat AMBIENT_DATE_FORMAT =
             new SimpleDateFormat("HH:mm", Locale.US);
 
     private BoxInsetLayout mContainerView;
-    private TextView mTextView;
-    private TextView mClockView;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -26,6 +42,29 @@ public class MainActivity extends WearableActivity {
         setAmbientEnabled();
 
         mContainerView = (BoxInsetLayout) findViewById(R.id.container);
+
+        mHighView = (TextView) mContainerView.findViewById(R.id.high_view);
+        mLowView = (TextView) mContainerView.findViewById(R.id.low_view);
+
+
+        mMessageReceiver = new BroadcastReceiver() {
+            @Override
+            public void onReceive(Context context, Intent intent) {
+                Log.d(LOG_TAG, "onReceive");
+                mHigh = intent.getDoubleExtra("temp-high", 20);
+                mLow = intent.getDoubleExtra("temp-low", 0);
+                mWeatherId = intent.getIntExtra("weather-id", 0);
+
+
+
+            }
+        };
+
+
+
+
+        LocalBroadcastManager.getInstance(this).registerReceiver(
+                mMessageReceiver, new IntentFilter("weather-data"));
 
     }
 
@@ -50,14 +89,14 @@ public class MainActivity extends WearableActivity {
     private void updateDisplay() {
         if (isAmbient()) {
             mContainerView.setBackgroundColor(getResources().getColor(android.R.color.black));
-            mTextView.setTextColor(getResources().getColor(android.R.color.white));
-            mClockView.setVisibility(View.VISIBLE);
+            mHighView.setText((int) mHigh);
+            mLowView.setText((int) mLow);
 
-            mClockView.setText(AMBIENT_DATE_FORMAT.format(new Date()));
         } else {
+            Log.d(LOG_TAG, "updateDisplay");
             mContainerView.setBackground(null);
-            mTextView.setTextColor(getResources().getColor(android.R.color.black));
-            mClockView.setVisibility(View.GONE);
+            mHighView.setText((int) mHigh);
+            mLowView.setText((int) mLow);
         }
     }
 }

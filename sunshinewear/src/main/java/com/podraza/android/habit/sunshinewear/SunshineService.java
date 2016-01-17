@@ -3,6 +3,7 @@ package com.podraza.android.habit.sunshinewear;
 import android.app.Service;
 import android.content.Intent;
 import android.os.IBinder;
+import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
 
 import com.google.android.gms.wearable.DataEvent;
@@ -19,6 +20,7 @@ public class SunshineService extends WearableListenerService {
     private int weatherId;
 
     public SunshineService() {
+        Log.d(LOG_TAG, "created service");
 
     }
 
@@ -36,7 +38,15 @@ public class SunshineService extends WearableListenerService {
                     low = map.getDouble("temp-low");
                     weatherId = map.getInt("weather-id");
 
+                    Log.d(LOG_TAG, high + "-" + low + "-" + weatherId);
 
+                    Intent intent = new Intent("weather-data");
+
+                    intent.putExtra("temp-high", high);
+                    intent.putExtra("temp-low", low);
+                    intent.putExtra("weather-id", weatherId);
+
+                    LocalBroadcastManager.getInstance(getApplicationContext()).sendBroadcast(intent);
 
                 }
 
