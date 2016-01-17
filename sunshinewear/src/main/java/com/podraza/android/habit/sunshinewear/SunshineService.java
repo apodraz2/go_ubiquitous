@@ -19,7 +19,7 @@ public class SunshineService extends WearableListenerService {
     private int weatherId;
 
     public SunshineService() {
-        Log.d(LOG_TAG, "created service");
+
     }
 
     @Override
@@ -36,7 +36,7 @@ public class SunshineService extends WearableListenerService {
                     low = map.getDouble("temp-low");
                     weatherId = map.getInt("weather-id");
 
-                    Log.d(LOG_TAG, high + "-" + low + "-" + weatherId);
+
 
                 }
 
