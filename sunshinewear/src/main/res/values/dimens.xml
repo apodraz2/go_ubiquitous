@@ -9,8 +9,12 @@
     <dimen name="digital_x_offset">15dp</dimen>
     <dimen name="digital_x_offset_round">25dp</dimen>
     <dimen name="digital_y_offset">95dp</dimen>
-    <dimen name="degree_y_offset">185dp</dimen>
 
-    <dimen name="bitmap_x_offset">50dp</dimen>
-    <dimen name="bitmap_y_offset">0dp</dimen>
+    <dimen name="bitmap_x_offset_round">65dp</dimen>
+    <dimen name="bitmap_y_offset_round">25dp</dimen>
+    <dimen name="bitmap_x_offset">35dp</dimen>
+    <dimen name="bitmap_y_offset">15dp</dimen>
+
+    <dimen name="data_y_offset_round">135dp</dimen>
+    <dimen name="data_y_offset">135dp</dimen>
 </resources>

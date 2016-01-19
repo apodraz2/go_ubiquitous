@@ -114,7 +114,11 @@ public class SunshineWatchFace extends CanvasWatchFaceService {
 
         float mXOffset;
         float mYOffset;
-        float mDegreeYOffset;
+
+        float mBitmapXOffset;
+        float mBitmapYOffset;
+
+        float mDataYOffset;
 
         /**
          * Whether the display supports fewer bits for each color in ambient mode. When true, we
@@ -134,8 +138,6 @@ public class SunshineWatchFace extends CanvasWatchFaceService {
                     .build());
             Resources resources = SunshineWatchFace.this.getResources();
             mYOffset = resources.getDimension(R.dimen.digital_y_offset);
-
-            mDegreeYOffset = resources.getDimension(R.dimen.degree_y_offset);
 
             mBackgroundPaint = new Paint();
             mBackgroundPaint.setColor(resources.getColor(R.color.background));
@@ -223,8 +225,18 @@ public class SunshineWatchFace extends CanvasWatchFaceService {
             boolean isRound = insets.isRound();
             mXOffset = resources.getDimension(isRound
                     ? R.dimen.digital_x_offset_round : R.dimen.digital_x_offset);
+
+            mBitmapXOffset = resources.getDimension(isRound
+                ? R.dimen.bitmap_x_offset_round : R.dimen.bitmap_x_offset);
+
+            mBitmapYOffset = resources.getDimension(isRound
+                ? R.dimen.bitmap_y_offset_round : R.dimen.bitmap_y_offset);
+
             float textSize = resources.getDimension(isRound
                     ? R.dimen.digital_text_size_round : R.dimen.digital_text_size);
+
+            mDataYOffset = resources.getDimension(isRound
+                ? R.dimen.data_y_offset_round : R.dimen.data_y_offset);
 
             mTextPaint.setTextSize(textSize);
         }
@@ -300,11 +312,11 @@ public class SunshineWatchFace extends CanvasWatchFaceService {
 
                 Bitmap weatherPic = BitmapFactory.decodeResource(getApplicationContext().getResources(), Utility.getIconResourceForWeatherCondition(mWeatherId));
 
-                canvas.drawBitmap(weatherPic, 50, 35, mTextPaint);
-                canvas.drawText(Double.toString(mHigh) + " " + Double.toString(mLow), mXOffset, 190, mTextPaint);
+                canvas.drawBitmap(weatherPic, mBitmapXOffset, mBitmapYOffset, mTextPaint);
+                canvas.drawText(Double.toString(mHigh) + " " + Double.toString(mLow), mXOffset, mDataYOffset, mTextPaint);
 
             } else {
-                canvas.drawText("No Connection", mXOffset, 190, mTextPaint);
+                canvas.drawText("No Data", mXOffset, mDataYOffset, mTextPaint);
             }
             canvas.drawText(text, mXOffset, mYOffset, mTextPaint);
 
