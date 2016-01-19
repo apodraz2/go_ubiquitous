@@ -21,6 +21,8 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.res.Resources;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
@@ -29,9 +31,11 @@ import android.graphics.Typeface;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
+import android.support.v4.content.LocalBroadcastManager;
 import android.support.wearable.watchface.CanvasWatchFaceService;
 import android.support.wearable.watchface.WatchFaceStyle;
 import android.text.format.Time;
+import android.util.Log;
 import android.view.SurfaceHolder;
 import android.view.WindowInsets;
 
@@ -46,6 +50,15 @@ import java.util.concurrent.TimeUnit;
 public class SunshineWatchFace extends CanvasWatchFaceService {
     private static final Typeface NORMAL_TYPEFACE =
             Typeface.create(Typeface.SANS_SERIF, Typeface.NORMAL);
+
+    private final String LOG_TAG = getClass().getSimpleName();
+
+    private BroadcastReceiver mMessageReceiver;
+
+    private double mHigh;
+    private double mLow;
+    private int mWeatherId;
+    private boolean mReceivedBroadcast = false;
 
     /**
      * Update rate in milliseconds for interactive mode. We update once a second since seconds are
@@ -101,6 +114,7 @@ public class SunshineWatchFace extends CanvasWatchFaceService {
 
         float mXOffset;
         float mYOffset;
+        float mDegreeYOffset;
 
         /**
          * Whether the display supports fewer bits for each color in ambient mode. When true, we
@@ -121,6 +135,8 @@ public class SunshineWatchFace extends CanvasWatchFaceService {
             Resources resources = SunshineWatchFace.this.getResources();
             mYOffset = resources.getDimension(R.dimen.digital_y_offset);
 
+            mDegreeYOffset = resources.getDimension(R.dimen.degree_y_offset);
+
             mBackgroundPaint = new Paint();
             mBackgroundPaint.setColor(resources.getColor(R.color.background));
 
@@ -128,6 +144,24 @@ public class SunshineWatchFace extends CanvasWatchFaceService {
             mTextPaint = createTextPaint(resources.getColor(R.color.digital_text));
 
             mTime = new Time();
+
+            mMessageReceiver = new BroadcastReceiver() {
+                @Override
+                public void onReceive(Context context, Intent intent) {
+                    Log.d(LOG_TAG, "onReceive");
+                    mHigh = Math.ceil(intent.getDoubleExtra("temp-high", 20));
+                    mLow = Math.ceil(intent.getDoubleExtra("temp-low", 0));
+                    mWeatherId = intent.getIntExtra("weather-id", 0);
+                    mReceivedBroadcast = true;
+
+                    Log.d(LOG_TAG, mHigh + " " + mLow + " " + mWeatherId);
+
+                }
+            };
+
+
+            LocalBroadcastManager.getInstance(getApplicationContext()).registerReceiver(
+                    mMessageReceiver, new IntentFilter("weather-data"));
         }
 
         @Override
@@ -261,7 +295,19 @@ public class SunshineWatchFace extends CanvasWatchFaceService {
             String text = mAmbient
                     ? String.format("%d:%02d", mTime.hour, mTime.minute)
                     : String.format("%d:%02d:%02d", mTime.hour, mTime.minute, mTime.second);
+
+            if(mReceivedBroadcast) {
+
+                Bitmap weatherPic = BitmapFactory.decodeResource(getApplicationContext().getResources(), Utility.getIconResourceForWeatherCondition(mWeatherId));
+
+                canvas.drawBitmap(weatherPic, 50, 35, mTextPaint);
+                canvas.drawText(Double.toString(mHigh) + " " + Double.toString(mLow), mXOffset, 190, mTextPaint);
+
+            } else {
+                canvas.drawText("No Connection", mXOffset, 190, mTextPaint);
+            }
             canvas.drawText(text, mXOffset, mYOffset, mTextPaint);
+
         }
 
         /**
